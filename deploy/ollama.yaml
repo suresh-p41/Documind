@@ -26,7 +26,7 @@ spec:
           # TODO: pin to a specific tested version tag before a real rollout
           image: ollama/ollama:latest
           # Start the server, then download the model (needs outbound internet
-          # to registry.ollama.ai on first start; ~4.7 GB for qwen2.5:7b).
+          # to registry.ollama.ai on first start; ~1.9 GB for qwen2.5:3b).
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -46,6 +46,10 @@ spec:
             # Keep the model loaded between requests (avoids reload latency)
             - name: OLLAMA_KEEP_ALIVE
               value: "-1"
+            # The app sends one request at a time; a single slot keeps the
+            # KV cache (and memory) small enough for the 4Gi limit.
+            - name: OLLAMA_NUM_PARALLEL
+              value: "1"
           ports:
             - name: http
               containerPort: 11434
@@ -62,12 +66,14 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 20
           resources:
-            # Sized for qwen2.5:7b on CPU. For qwen2.5:3b: ~4Gi request / 6Gi limit.
+            # Sized for qwen2.5:3b on CPU, within the team quota's per-container
+            # cap of 2 CPU / 4Gi (qwen2.5:7b does not fit under that cap).
             requests:
-              cpu: "2"
-              memory: 8Gi
+              cpu: 1500m
+              memory: 3Gi
             limits:
-              memory: 10Gi
+              cpu: "2"
+              memory: 4Gi
           volumeMounts:
             - name: models
               mountPath: /root/.ollama
@@ -76,7 +82,7 @@ spec:
         # pod is rescheduled; swap for a PVC if that becomes a problem.
         - name: models
           emptyDir:
-            sizeLimit: 10Gi
+            sizeLimit: 5Gi
 ---
 apiVersion: v1
 kind: Service
