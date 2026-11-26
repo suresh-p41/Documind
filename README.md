@@ -93,6 +93,22 @@ cd backend
 .venv/bin/python main.py path/to/pdfs
 ```
 
+### Deploy to Kubernetes
+
+The repo-root `Dockerfile` builds one image (API + dashboard) listening on port 8080.
+`deploy/` runs Ollama as a second pod in the same namespace, reachable only through
+an internal `ClusterIP` Service (`http://ollama:11434`), so documents still never leave
+your own infrastructure. The model is set once in `deploy/config.yaml`.
+
+```bash
+docker build -t <YOUR_REGISTRY>/documind:<TAG> . && docker push <YOUR_REGISTRY>/documind:<TAG>
+# set the image in deploy/documind.yaml, then:
+kubectl apply -k deploy/ -n <YOUR_TEAM_NAMESPACE>
+```
+
+The app reads `OLLAMA_BASE_URL` (default `http://localhost:11434`) and `OLLAMA_MODEL`
+(default `qwen2.5:7b`), so local development needs no changes.
+
 ## Try it
 
 Sample documents are in [`testdata/`](testdata/):

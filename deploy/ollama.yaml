@@ -1,0 +1,116 @@
+# Ollama running inside the cluster, next to the app. It is exposed ONLY as a
+# ClusterIP Service (no Ingress / load balancer), so prompts and documents
+# never leave the namespace.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  labels:
+    app.kubernetes.io/name: ollama
+    app.kubernetes.io/part-of: documind
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ollama
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ollama
+        app.kubernetes.io/part-of: documind
+    spec:
+      containers:
+        - name: ollama
+          # TODO: pin to a specific tested version tag before a real rollout
+          image: ollama/ollama:latest
+          # Start the server, then download the model (needs outbound internet
+          # to registry.ollama.ai on first start; ~4.7 GB for qwen2.5:7b).
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              ollama serve &
+              pid=$!
+              until ollama list >/dev/null 2>&1; do sleep 1; done
+              ollama pull "$OLLAMA_MODEL" || { echo "model pull failed"; kill $pid; exit 1; }
+              wait $pid
+          env:
+            - name: OLLAMA_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: documind-llm
+                  key: OLLAMA_MODEL
+            - name: OLLAMA_HOST
+              value: "0.0.0.0:11434"
+            # Keep the model loaded between requests (avoids reload latency)
+            - name: OLLAMA_KEEP_ALIVE
+              value: "-1"
+          ports:
+            - name: http
+              containerPort: 11434
+          # Ready only once the model has been downloaded
+          readinessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "ollama show \"$OLLAMA_MODEL\" >/dev/null 2>&1"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            # Sized for qwen2.5:7b on CPU. For qwen2.5:3b: ~4Gi request / 6Gi limit.
+            requests:
+              cpu: "2"
+              memory: 8Gi
+            limits:
+              memory: 10Gi
+          volumeMounts:
+            - name: models
+              mountPath: /root/.ollama
+      volumes:
+        # Model cache. emptyDir means the model is re-downloaded whenever the
+        # pod is rescheduled; swap for a PVC if that becomes a problem.
+        - name: models
+          emptyDir:
+            sizeLimit: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  labels:
+    app.kubernetes.io/name: ollama
+    app.kubernetes.io/part-of: documind
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: ollama
+  ports:
+    - name: http
+      port: 11434
+      targetPort: http
+---
+# Only the DocuMind app pods may call Ollama (other workloads on the shared
+# cluster cannot). Ignored if the cluster's CNI does not enforce NetworkPolicy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ollama-allow-documind-only
+  labels:
+    app.kubernetes.io/part-of: documind
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ollama
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: documind
+      ports:
+        - port: 11434

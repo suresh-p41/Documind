@@ -1,0 +1,15 @@
+# Single place to choose the model. Both the Ollama pod (which pulls it at
+# startup) and the DocuMind app (which calls it) read this value.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: documind-llm
+  labels:
+    app.kubernetes.io/part-of: documind
+data:
+  # qwen2.5:7b needs ~8Gi memory. If the namespace quota is too small, switch
+  # to the lighter fallback "qwen2.5:3b" and lower the Ollama resources in
+  # ollama.yaml (~4Gi request / 6Gi limit).
+  OLLAMA_MODEL: "qwen2.5:7b"
+  # Only reachable inside the namespace (ClusterIP Service in ollama.yaml).
+  OLLAMA_BASE_URL: "http://ollama:11434"
