@@ -2,7 +2,6 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, model_validator
 
-
 DocumentType = Literal[
     # Agreements
     "contract",

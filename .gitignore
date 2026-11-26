@@ -26,3 +26,7 @@ testdata/raw/
 .DS_Store
 .vscode/
 .idea/
+
+# ---------- Lint / type-check caches ----------
+.ruff_cache/
+.mypy_cache/

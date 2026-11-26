@@ -1,8 +1,8 @@
 import sys
 from pathlib import Path
 
-from app.services.pdf_service import extract_pdf_text
 from app.services.llm_service import extract_information
+from app.services.pdf_service import extract_pdf_text
 
 OUTPUT_DIR = Path(__file__).parent / "output"
 

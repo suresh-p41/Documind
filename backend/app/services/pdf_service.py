@@ -90,10 +90,10 @@ def extract_pdf(file_path: str) -> PdfExtraction:
     # Use only the OCR score. Docling's overall page "grade" also mixes in
     # layout analysis, which marks clean digital invoices as "fair".
     page_scores = {
-        page_no: _score(page_conf.ocr_score)
+        page_no: score
         for page_no, page_conf in result.confidence.pages.items()
+        if (score := _score(page_conf.ocr_score)) is not None
     }
-    page_scores = {p: s for p, s in page_scores.items() if s is not None}
 
     return PdfExtraction(
         text=extracted_text,
