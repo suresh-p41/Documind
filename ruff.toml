@@ -1,0 +1,13 @@
+# Ruff (lint) config for DocuMind. Run via scripts/validate.sh.
+target-version = "py312"
+line-length = 120
+extend-exclude = ["frontend", "testdata/raw"]
+
+[lint]
+# Ruff defaults (pyflakes + pycodestyle errors) plus import sorting,
+# common bug patterns.
+select = ["E4", "E7", "E9", "F", "W", "I", "B"]
+
+[lint.flake8-bugbear]
+# FastAPI dependency markers are meant to be called in defaults.
+extend-immutable-calls = ["fastapi.File", "fastapi.Form", "fastapi.Query", "fastapi.Depends", "fastapi.Body"]

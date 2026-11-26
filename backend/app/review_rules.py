@@ -196,7 +196,7 @@ def _suspicious(pdf: PdfExtraction, signals) -> list[dict]:
 
 
 # Used when the verification pass could not run, so every signal is "unknown"
-NO_SIGNALS = {
+NO_SIGNALS: dict = {
     "document_type_confidence": "high",
     "alternative_document_type": None,
     "primary_party_unclear": False,

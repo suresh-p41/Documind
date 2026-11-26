@@ -84,6 +84,27 @@ npm run dev
 
 Open **http://localhost:5173**.
 
+### Environment variables
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Where the backend reaches Ollama |
+| `OLLAMA_MODEL` | `qwen2.5:7b` | Model used for extraction and verification |
+| `STATIC_DIR` | unset | Container only: folder with the built dashboard to serve |
+
+Local development needs none of them set as long as Ollama runs on its default port.
+
+### Validate
+
+Lint, type-check and frontend build, the same checks CI runs on every push and PR:
+
+```bash
+pip install ruff mypy
+scripts/validate.sh
+```
+
+See [`AGENTS.md`](AGENTS.md) for the repo guide for coding agents.
+
 ### Command-line alternative
 
 To process a folder without the dashboard (writes one JSON file per PDF to `backend/output/`):
@@ -160,6 +181,8 @@ frontend/
     pages/              Batches, batch detail, file, verification queue
     components/         Upload form, JSON viewer, review panel, ...
 testdata/               Sample documents and expected answers
+scripts/validate.sh     Lint + type-check + frontend build (run by CI)
+.github/workflows/      CI
 ```
 
 ## Known limitations

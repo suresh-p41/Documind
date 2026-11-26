@@ -185,7 +185,7 @@ def extract_information(document_text: str) -> DocumentExtraction:
 
     if not document_text.strip():
         raise ValueError("Document text cannot be empty")
-    
+
     check_document_fits(document_text)
 
     response = _chat(

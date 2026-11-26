@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Lint, type-check, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # Only the lint/type tools: the heavy runtime deps (docling, torch, OCR)
+      # are not needed because mypy runs with ignore_missing_imports.
+      - name: Install lint and type-check tools
+        run: pip install "ruff==0.16.9" "mypy==2.3.1"
+
+      - name: Run scripts/validate.sh
+        run: scripts/validate.sh

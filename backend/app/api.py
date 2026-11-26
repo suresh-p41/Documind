@@ -390,13 +390,14 @@ def reprocess_file(file_id: int):
 # unset there and Vite serves the frontend.
 STATIC_DIR = os.getenv("STATIC_DIR")
 if STATIC_DIR and Path(STATIC_DIR).is_dir():
-    app.mount("/assets", StaticFiles(directory=Path(STATIC_DIR) / "assets", check_dir=False), name="assets")
+    STATIC_ROOT = Path(STATIC_DIR)
+    app.mount("/assets", StaticFiles(directory=STATIC_ROOT / "assets", check_dir=False), name="assets")
 
     @app.get("/{path:path}", include_in_schema=False)
     def spa(path: str):
         if path.startswith("api/"):
             raise HTTPException(404, "Not found")
-        file = (Path(STATIC_DIR) / path).resolve()
-        if path and file.is_file() and file.is_relative_to(Path(STATIC_DIR).resolve()):
+        file = (STATIC_ROOT / path).resolve()
+        if path and file.is_file() and file.is_relative_to(STATIC_ROOT.resolve()):
             return FileResponse(file)
-        return FileResponse(Path(STATIC_DIR) / "index.html")
+        return FileResponse(STATIC_ROOT / "index.html")
