@@ -100,6 +100,12 @@ The repo-root `Dockerfile` builds one image (API + dashboard) listening on port 
 an internal `ClusterIP` Service (`http://ollama:11434`), so documents still never leave
 your own infrastructure. The model is set once in `deploy/config.yaml`.
 
+In the cluster the model is `qwen2.5:3b`, not `qwen2.5:7b`: the hackathon team quota
+allows 4 CPU / 8Gi of requests per namespace and at most 2 CPU / 4Gi per container,
+and 7b needs more than 4Gi. The manifests request 2 CPU / 4.5Gi in total
+(Ollama 1500m / 3Gi, app 500m / 1.5Gi), and each container is limited to 2 CPU / 4Gi.
+If 3b is too slow or runs out of memory, set `qwen2.5:1.5b` in `deploy/config.yaml`.
+
 ```bash
 docker build -t <YOUR_REGISTRY>/documind:<TAG> . && docker push <YOUR_REGISTRY>/documind:<TAG>
 # set the image in deploy/documind.yaml, then:
@@ -107,7 +113,8 @@ kubectl apply -k deploy/ -n <YOUR_TEAM_NAMESPACE>
 ```
 
 The app reads `OLLAMA_BASE_URL` (default `http://localhost:11434`) and `OLLAMA_MODEL`
-(default `qwen2.5:7b`), so local development needs no changes.
+(default `qwen2.5:7b`), so local development needs no changes; `deploy/config.yaml`
+sets `qwen2.5:3b` for the cluster.
 
 ## Try it
 

@@ -7,9 +7,10 @@ metadata:
   labels:
     app.kubernetes.io/part-of: documind
 data:
-  # qwen2.5:7b needs ~8Gi memory. If the namespace quota is too small, switch
-  # to the lighter fallback "qwen2.5:3b" and lower the Ollama resources in
-  # ollama.yaml (~4Gi request / 6Gi limit).
-  OLLAMA_MODEL: "qwen2.5:7b"
+  # Sized for the hackathon team quota (4 CPU / 8Gi requests per namespace,
+  # 2 CPU / 4Gi per container). qwen2.5:7b needs more than the 4Gi
+  # per-container cap, so it cannot run here. "qwen2.5:1.5b" is the lighter
+  # fallback if qwen2.5:3b is too slow or runs out of memory.
+  OLLAMA_MODEL: "qwen2.5:3b"
   # Only reachable inside the namespace (ClusterIP Service in ollama.yaml).
   OLLAMA_BASE_URL: "http://ollama:11434"
