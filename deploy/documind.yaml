@@ -1,0 +1,70 @@
+# The DocuMind app (FastAPI + built dashboard) on port 8080.
+# Expose it the way your hackathon namespace expects (Ingress / ALB rule);
+# that is not included here because the host and ingress class are cluster-specific.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: documind
+  labels:
+    app.kubernetes.io/name: documind
+    app.kubernetes.io/part-of: documind
+spec:
+  # Keep at 1: SQLite database and uploads live on a local volume.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: documind
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: documind
+        app.kubernetes.io/part-of: documind
+    spec:
+      containers:
+        - name: documind
+          # Placeholder: replace with the image you build and push from the
+          # repo-root Dockerfile, e.g. <account>.dkr.ecr.<region>.amazonaws.com/documind:<tag>
+          image: <YOUR_REGISTRY>/documind:<TAG>
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: documind-llm
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            periodSeconds: 10
+          resources:
+            # Docling OCR is memory hungry
+            requests:
+              cpu: "1"
+              memory: 2Gi
+            limits:
+              memory: 4Gi
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+      volumes:
+        # SQLite DB + uploaded PDFs. emptyDir: data is lost when the pod restarts.
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: documind
+  labels:
+    app.kubernetes.io/name: documind
+    app.kubernetes.io/part-of: documind
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: documind
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

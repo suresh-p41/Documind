@@ -6,7 +6,11 @@ import ollama
 
 from app.schemas import DocumentExtraction, ReviewSignals
 
-MODEL_NAME = "qwen2.5:7b"
+# Where Ollama runs and which model to use. Defaults match a local
+# `ollama serve`; in Kubernetes these point at the in-cluster Ollama
+# Service (see deploy/), so documents never leave the cluster.
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+MODEL_NAME = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
 NUM_CTX = 10000
 MAX_OUTPUT_TOKENS = 1500
 CHARS_PER_TOKEN = 4.0  # measured ~4.3 on the scanned sample; 4.0 keeps a safety margin
@@ -16,7 +20,7 @@ CHARS_PER_TOKEN = 4.0  # measured ~4.3 on the scanned sample; 4.0 keeps a safety
 # Normal calls take 5-60s. Override with: OLLAMA_TIMEOUT=600 uvicorn ...
 OLLAMA_TIMEOUT_SECONDS = float(os.getenv("OLLAMA_TIMEOUT", "300"))
 
-_client = ollama.Client(timeout=OLLAMA_TIMEOUT_SECONDS)
+_client = ollama.Client(host=OLLAMA_BASE_URL, timeout=OLLAMA_TIMEOUT_SECONDS)
 
 
 def _chat(**kwargs):

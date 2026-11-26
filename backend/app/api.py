@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import shutil
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -8,6 +9,7 @@ from typing import Literal
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from app import worker
@@ -381,3 +383,20 @@ def reprocess_file(file_id: int):
         conn.close()
     worker.notify()
     return payload
+
+
+# In the container image the built React dashboard is served by this same
+# app on one port (see Dockerfile). Local dev is unchanged: STATIC_DIR is
+# unset there and Vite serves the frontend.
+STATIC_DIR = os.getenv("STATIC_DIR")
+if STATIC_DIR and Path(STATIC_DIR).is_dir():
+    app.mount("/assets", StaticFiles(directory=Path(STATIC_DIR) / "assets", check_dir=False), name="assets")
+
+    @app.get("/{path:path}", include_in_schema=False)
+    def spa(path: str):
+        if path.startswith("api/"):
+            raise HTTPException(404, "Not found")
+        file = (Path(STATIC_DIR) / path).resolve()
+        if path and file.is_file() and file.is_relative_to(Path(STATIC_DIR).resolve()):
+            return FileResponse(file)
+        return FileResponse(Path(STATIC_DIR) / "index.html")
