@@ -1,0 +1,28 @@
+# ---------- Python ----------
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# ---------- Node / frontend ----------
+node_modules/
+frontend/dist/
+
+# ---------- Runtime data (database + every uploaded PDF) ----------
+backend/data/
+backend/output/
+backend/tested/
+
+# ---------- Large re-downloadable dataset ----------
+# Full CUAD download (~170 MB). See testdata/README.md to fetch it again.
+testdata/raw/
+
+# ---------- Secrets and local settings ----------
+.env
+.env.*
+.claude/settings.local.json
+
+# ---------- OS / editor ----------
+.DS_Store
+.vscode/
+.idea/

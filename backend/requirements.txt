@@ -1,0 +1,6 @@
+docling==2.151.1
+ollama==0.6.3
+pydantic==2.14.4
+fastapi==0.165.0
+uvicorn==0.54.0
+python-multipart==0.0.34
